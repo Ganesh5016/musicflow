@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MusicFlow Player</title>
+<style>
+  body {font-family:Arial,sans-serif;background:#f0f0f0;margin:0;padding:20px;}
+  h1 {text-align:center;}
+  #song-list {margin-top:20px;}
+  .song {background:#fff;padding:10px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center;}
+  .song button {margin-left:10px;}
+  #upload-form {background:#fff;padding:15px;margin-top:20px;}
+  #player {width:100%;margin-top:20px;}
+</style>
+</head>
+<body>
+<h1>MusicFlow</h1>
+<div id="song-list"></div>
+<div id="upload-form">
+  <h3>Upload New Track</h3>
+  <input type="text" id="title" placeholder="Title" required />
+  <input type="text" id="artist" placeholder="Artist" />
+  <input type="file" id="file" accept="audio/mpeg" required />
+  <button id="upload-btn">Upload</button>
+  <p id="upload-status"></p>
+</div>
+<audio id="player" controls></audio>
+<script>
+const API_BASE = '/api';
+const songListEl = document.getElementById('song-list');
+const player = document.getElementById('player');
+
+async function fetchSongs(){
+  const res = await fetch(`${API_BASE}/songs`);
+  const songs = await res.json();
+  renderSongs(songs);
+}
+
+function renderSongs(songs){
+  songListEl.innerHTML = '<h2>Library</h2>';
+  songs.forEach(s=>{
+    const div = document.createElement('div');
+    div.className='song';
+    div.innerHTML = `<span>${s.title} – ${s.artist || 'Unknown Artist'}</span>`;
+    const playBtn = document.createElement('button');
+    playBtn.textContent='Play';
+    playBtn.onclick=()=>{player.src=`${API_BASE}/songs/${s.id}`;player.play();};
+    const delBtn = document.createElement('button');
+    delBtn.textContent='Delete';
+    delBtn.onclick=async()=>{await fetch(`${API_BASE}/songs/${s.id}`,{method:'DELETE'});fetchSongs();};
+    div.appendChild(playBtn);
+    div.appendChild(delBtn);
+    songListEl.appendChild(div);
+  });
+}
+
+// Upload handling
+document.getElementById('upload-btn').addEventListener('click', async()=>{
+  const title = document.getElementById('title').value.trim();
+  const artist = document.getElementById('artist').value.trim();
+  const fileInput = document.getElementById('file');
+  if(!fileInput.files.length){alert('Select a file');return;}
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('artist', artist);
+  formData.append('file', fileInput.files[0]);
+  const statusEl = document.getElementById('upload-status');
+  statusEl.textContent='Uploading...';
+  const res = await fetch(`${API_BASE}/upload`,{method:'POST',body:formData});
+  if(res.ok){statusEl.textContent='Upload successful!';
+    document.getElementById('title').value='';
+    document.getElementById('artist').value='';
+    fileInput.value='';
+    fetchSongs();
+  }else{statusEl.textContent='Upload failed.';}
+});
+
+fetchSongs();
+</script>
+</body>
+</html>
