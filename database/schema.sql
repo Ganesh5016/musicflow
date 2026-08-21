@@ -1,0 +1,7 @@
+CREATE TABLE songs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    artist TEXT,
+    filename TEXT NOT NULL,
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
